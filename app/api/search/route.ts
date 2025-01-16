@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server'
 
+interface SearchResult {
+  title?: string;
+  url?: string;
+  snippet?: string;
+  score?: number;
+}
+
 export async function POST(req: Request) {
   try {
     const { query } = await req.json()
@@ -44,7 +51,7 @@ export async function POST(req: Request) {
       }, { status: 500 })
     }
 
-    const results = data.results.map((result: any) => ({
+    const results = data.results.map((result: SearchResult) => ({
       title: result.title || 'No title',
       url: result.url || '#',
       snippet: result.snippet || 'No snippet available',
