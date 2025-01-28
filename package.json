@@ -9,11 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.36",
+    "@langchain/openai": "^0.4.2",
     "@radix-ui/react-slot": "^1.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "langchain": "^0.3.13",
     "lucide-react": "^0.471.1",
     "next": "14.2.16",
+    "openai": "^4.80.0",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.6.0",
