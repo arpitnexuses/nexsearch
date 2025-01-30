@@ -130,7 +130,7 @@ interface EnrichedData {
 }
 
 interface ExaSearchResult {
-  results: any[];
+  results: Record<string, unknown>[];
   domain?: string;
 }
 
@@ -148,7 +148,9 @@ async function verifyDomain(domain: string): Promise<boolean> {
         redirect: 'follow'
       });
       if (httpsResponse.ok) return true;
-    } catch (e) {}
+    } catch {
+      // Silently continue to try HTTP if HTTPS fails
+    }
 
     // If HTTPS fails, try HTTP
     try {
@@ -157,11 +159,13 @@ async function verifyDomain(domain: string): Promise<boolean> {
         redirect: 'follow'
       });
       if (httpResponse.ok) return true;
-    } catch (e) {}
+    } catch  {
+      console.log('HTTP request failed for domain:', domain);
+    }
 
     // If both fail but domain looks valid, still accept it
     return /^[a-zA-Z0-9][a-zA-Z0-9-_.]+\.[a-zA-Z]{2,}$/.test(domain);
-  } catch (e) {
+  } catch  {
     // Accept domain if it has a valid format
     return /^[a-zA-Z0-9][a-zA-Z0-9-_.]+\.[a-zA-Z]{2,}$/.test(domain);
   }
@@ -427,7 +431,7 @@ async function verifyLinkedInUrl(url: string): Promise<string | null> {
   if (!url.includes('/company/')) return null;
   
   // Clean and standardize LinkedIn URL
-  let cleanUrl = url
+  const cleanUrl = url
     .replace(/^(https?:\/\/)?(www\.)?/i, '')
     .replace(/\/$/, '')
     .toLowerCase()
@@ -455,9 +459,10 @@ async function verifyLinkedInUrl(url: string): Promise<string | null> {
     
     // Check if it's a valid company page
     if (response.ok && response.status === 200) {
+      console.log('LinkedIn URL verified:', fullUrl);
       return fullUrl;
     }
-  } catch (e) {
+  } catch {
     // If network error, still validate format
     if (cleanUrl.match(/^linkedin\.com\/company\/[\w-]+\/?$/)) {
       return fullUrl;
@@ -505,12 +510,12 @@ async function verifyEmail(email: string, domain: string): Promise<boolean> {
       
       // Additional MX record check could be added here
       
-    } catch (e) {
+    } catch  {
       return false;
     }
 
     return true;
-  } catch (e) {
+  } catch  {
     return false;
   }
 }
@@ -519,33 +524,22 @@ async function findApolloContacts(company: string, domain: string): Promise<Cont
   if (!process.env.APOLLO_API_KEY || !domain) return [];
 
   try {
-    const [peopleResponse, organizationResponse] = await Promise.all([
-      fetch('https://api.apollo.io/v1/people/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Api-Key': process.env.APOLLO_API_KEY
-        },
-        body: JSON.stringify({
-          q_organization_domains: [domain],
-          page: 1,
-          per_page: 15,
-          person_titles: ['CEO', 'CTO', 'CFO', 'COO', 'President', 'VP', 'Director'],
-          contact_email_status: ['verified'],
-          q_employment_current: true
-        })
-      }),
-      fetch('https://api.apollo.io/v1/organizations/enrich', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Api-Key': process.env.APOLLO_API_KEY
-        },
-        body: JSON.stringify({ domain })
+    const peopleResponse = await fetch('https://api.apollo.io/v1/people/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Api-Key': process.env.APOLLO_API_KEY
+      },
+      body: JSON.stringify({
+        q_organization_domains: [domain],
+        page: 1,
+        per_page: 15,
+        person_titles: ['CEO', 'CTO', 'CFO', 'COO', 'President', 'VP', 'Director'],
+        contact_email_status: ['verified'],
+        q_employment_current: true
       })
-    ]);
+    });
 
     let contacts: ContactPerson[] = [];
 
@@ -690,7 +684,7 @@ async function getApolloData(company: string, domain?: string): Promise<Partial<
 
     // Only include fields that have actual data
     return Object.fromEntries(
-      Object.entries(result).filter(([_, value]) => 
+      Object.entries(result).filter(([ value]) => 
         value && value !== '' && value !== 'Not available'
       )
     ) as Partial<CompanyResult>;
@@ -755,7 +749,7 @@ async function getDeepseekData(company: string, domain?: string): Promise<Partia
 
     // Only include fields that have actual data
     return Object.fromEntries(
-      Object.entries(result).filter(([_, value]) => 
+      Object.entries(result).filter(([ value]) => 
         value && value !== '' && value !== 'Not available'
       )
     ) as Partial<CompanyResult>;
@@ -876,7 +870,7 @@ function formatRevenue(revenue: string | number | undefined): string | undefined
   if (typeof revenue === 'string') {
     const match = revenue.match(/\$?(\d+\.?\d*)\s*(B|M|K|T).*?(\(\d{4}\))?/i);
     if (match) {
-      const [_, amount, unit, year] = match;
+      const [ amount, unit, year] = match;
       return `$${amount}${unit.toUpperCase()}${year || ''}`;
     }
     return revenue;
@@ -1499,7 +1493,7 @@ export async function POST(req: Request) {
       const companyPromises = lines.map(async (company) => {
         try {
           console.log('Processing company:', company);
-          let sources: string[] = [];
+          const sources: string[] = [];
           let bestData: Partial<CompanyResult> = {};
           
           // Try all APIs in parallel
@@ -1657,6 +1651,3 @@ export async function POST(req: Request) {
     }, { status: 500 });
   }
 }
-
-
-

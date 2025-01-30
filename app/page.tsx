@@ -78,7 +78,7 @@ export default function ChatInterface() {
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query: query.trim() })
       })
 
       if (!response.ok) {
@@ -92,8 +92,8 @@ export default function ChatInterface() {
       } else {
         setResults(data.results)
       }
-    } catch (e) {
-      setError({ error: 'An error occurred' })
+    } catch (err) {
+      setError({ error: err instanceof Error ? err.message : 'An error occurred' })
     } finally {
       setIsLoading(false)
     }
@@ -170,7 +170,7 @@ export default function ChatInterface() {
                 className="w-full bg-white shadow-sm border-slate-200 focus-visible:ring-blue-500 text-base h-32 rounded-md p-3"
               />
               <p className="mt-2 text-sm text-slate-500">
-                Ask about any companies worldwide - search by industry, region, size, or type. Get verified domains for top companies, startups, or specific businesses you're interested in.
+                Ask about any companies worldwide - search by industry, region, size, or type. Get verified domains for top companies, startups, or specific businesses you&apos;re interested in.
               </p>
             </div>
             <Button 
@@ -326,4 +326,3 @@ export default function ChatInterface() {
     </div>
   )
 }
-
