@@ -4,8 +4,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Exa Dashboard',
-  description: 'Beautiful frontend for Exa.ai',
+  title: 'Nex Dashboard',
+  description: 'Beautiful frontend for test',
 }
 
 export default function RootLayout({
