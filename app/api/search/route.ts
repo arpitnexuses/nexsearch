@@ -1398,21 +1398,21 @@ async function processQueryWithLangChain(query: string): Promise<{
     openAIApiKey: process.env.OPENAI_API_KEY,
   });
 
-  const queryAnalysisPrompt = PromptTemplate.fromTemplate(`
-    Analyze the following search query and provide:
-    1. An enhanced version of the query
-    2. The search intent (company, person, or general)
-    3. A confidence score (0-1)
+  const template = `Analyze the following search query and provide:
+1. An enhanced version of the query
+2. The search intent (company, person, or general)
+3. A confidence score (0-1)
 
-    Query: {query}
+Query: {query}
 
-    Respond in JSON format:
-    {
-      "enhancedQuery": "enhanced query here",
-      "searchIntent": "company|person|general",
-      "confidenceScore": 0.95
-    }
-  `);
+Respond in JSON format:
+{
+  "enhancedQuery": "enhanced query here",
+  "searchIntent": "company|person|general",
+  "confidenceScore": 0.95
+}`;
+
+  const queryAnalysisPrompt = PromptTemplate.fromTemplate(template);
 
   const chain = RunnableSequence.from([
     queryAnalysisPrompt,
