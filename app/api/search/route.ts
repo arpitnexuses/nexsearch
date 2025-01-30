@@ -1406,11 +1406,11 @@ async function processQueryWithLangChain(query: string): Promise<{
 Query: {query}
 
 Respond in JSON format:
-{
+\\{
   "enhancedQuery": "enhanced query here",
   "searchIntent": "company|person|general",
   "confidenceScore": 0.95
-}`;
+\\}`;
 
   const queryAnalysisPrompt = PromptTemplate.fromTemplate(template);
 
