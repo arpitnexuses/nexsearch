@@ -1398,21 +1398,24 @@ async function processQueryWithLangChain(query: string): Promise<{
     openAIApiKey: process.env.OPENAI_API_KEY,
   });
 
-  const template = `Analyze the following search query and provide:
-1. An enhanced version of the query
-2. The search intent (company, person, or general)
-3. A confidence score (0-1)
+  const template = `Analyze the following search query and provide an enhanced version, search intent, and confidence score.
 
-Query: {query}
+Search Query: {input}
 
-Respond in JSON format:
-\\{
-  "enhancedQuery": "enhanced query here",
-  "searchIntent": "company|person|general",
-  "confidenceScore": 0.95
-\\}`;
+Instructions:
+1. Create an enhanced version of the query that's more specific and targeted
+2. Determine if the query is about companies, people, or general information
+3. Provide a confidence score between 0 and 1
 
-  const queryAnalysisPrompt = PromptTemplate.fromTemplate(template);
+Format your response exactly like this, keeping the exact labels:
+ENHANCED_QUERY: <your enhanced version>
+SEARCH_INTENT: <company or person or general>
+CONFIDENCE: <number between 0 and 1>`;
+
+  const queryAnalysisPrompt = new PromptTemplate({
+    template,
+    inputVariables: ["input"]
+  });
 
   const chain = RunnableSequence.from([
     queryAnalysisPrompt,
@@ -1422,10 +1425,20 @@ Respond in JSON format:
 
   try {
     const result = await chain.invoke({
-      query: query,
+      input: query,
     });
     
-    return JSON.parse(result);
+    // Parse the formatted response
+    const lines = result.split('\n');
+    const enhancedQuery = lines.find(l => l.startsWith('ENHANCED_QUERY:'))?.split(':')[1]?.trim() || query;
+    const searchIntent = (lines.find(l => l.startsWith('SEARCH_INTENT:'))?.split(':')[1]?.trim() || 'general') as 'company' | 'person' | 'general';
+    const confidenceScore = parseFloat(lines.find(l => l.startsWith('CONFIDENCE:'))?.split(':')[1]?.trim() || '0.5');
+    
+    return {
+      enhancedQuery,
+      searchIntent,
+      confidenceScore: isNaN(confidenceScore) ? 0.5 : confidenceScore
+    };
   } catch (error) {
     console.error('LangChain processing error:', error);
     return {
